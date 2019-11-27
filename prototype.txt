@@ -1,0 +1,9 @@
+es.subscribe<OnClick>((OnClick e)->System.out.println(e.position))
+es.emit(new OnClick(new Position(0, 0)))
+
+es {
+    Class=>Function[]
+    subscribe
+    unsubscribe
+    emit
+}
