@@ -12,11 +12,9 @@ public class EventTarget {
     public EventTarget getParent(){
         return parent;
     }
-    
     public void setParent(EventTarget value){
         parent=value;
     }
-
     public final <T extends Event> void emit(T event, boolean bubbling){
         event.setTarget(this);
         event.setBubbling(bubbling);
@@ -27,6 +25,8 @@ public class EventTarget {
         for(Map.Entry<Class<?>, ArrayList<EventReceiver<?>>> e : listeners.entrySet()){
             if(e.getKey().isInstance(event)){
                 for(EventReceiver<?> callback : e.getValue()){
+                    // the signature of subscribe method already ensures
+                    // that all callbacks assigned to the event are of correct EventReceiver type
                     ((EventReceiver<T>)callback).receive(event);
                     if(event.isCancelled()){
                         return;
