@@ -14,11 +14,11 @@ public class Tests {
         }
     }
 
-    // workaround Java's lambda limitations
+    // obejście limitacji lambdy w Java'ie
     static boolean eventHappened;
     static boolean secondEventHappened;
 
-    // check if emiting the event causes the callback function being called
+    // sprawdzenie czy wyemitowanie Eventu powoduje wywołanie funkcji która na niego
     static void callingCallback(){
         eventHappened=false;
         EventReceiver<Event> callback=(Event event)->eventHappened=true;
@@ -27,10 +27,32 @@ public class Tests {
         target.subscribe(Event.class, callback);
         target.emit(new Event(), false);
         assert(eventHappened);
+    }
+
+    static void unsubscribing() {
+        eventHappened=false;
+        EventReceiver<Event> callback=(Event event)->eventHappened=true;
+        EventTarget target=new EventTarget();
+
+        target.subscribe(Event.class, callback);
         target.unsubscribe(Event.class, callback);
+        target.emit(new Event(), false);
+        assert(!eventHappened);
+    }
+
+    static void unsubscribeException() {
+        boolean exceptionHappened=false;
+        EventReceiver<Event> callback=(Event event)->eventHappened=true;
+        EventTarget target=new EventTarget();
+        try {
+            target.unsubscribe(Event.class, callback);
+        } catch(EventTarget.NoSuchEventListener e){
+            exceptionHappened=true;
+        }
+        assert(exceptionHappened);
     }
     
-    // check if emiting an event of different type than expected doesn't cause the callback function being called
+    // sprawdzenie czy wyemitowanie Event'u innego typu nie spowoduje wywołania funkcji oczekującej na Event
     static void differentReceiverType(){
         eventHappened=false;
         int key=64;
@@ -39,21 +61,18 @@ public class Tests {
         target.subscribe(KeyPress.class, callback);
         target.emit(new MouseClick(0, 0), false);
         assert(!eventHappened);
-        target.unsubscribe(KeyPress.class, callback);
     }
 
-    // check if data enclosed in Event object is passed correctly to the callback function
+    // przekazywanie danych o wydarzeniu poprzez parametr funkcji
     static void passingData(){
         int key=64;
         EventReceiver<KeyPress> callback=(KeyPress event)->{assert(event.key==key);};
         EventTarget target=new EventTarget();
         target.subscribe(KeyPress.class, callback);
         target.emit(new KeyPress(key), false);
-        target.unsubscribe(KeyPress.class, callback);
     }
 
-    // in this event system each event target can have its parent
-    // if second parameter to emit is true the event will go up from child to its parent
+    // drugi parameter funkcji emit EventReceiver'a mówi o tym czy rodzic EventReceiver'a także powinien otrzymać Event
     static void bubbling(){
         eventHappened=false;
         EventReceiver<Event> callback=(Event event)->eventHappened=true;
@@ -65,8 +84,8 @@ public class Tests {
         parent.subscribe(Event.class, callback);
         child.emit(new Event(), true);
         assert(eventHappened);
-        parent.unsubscribe(Event.class, callback);
     }
+
     static void dontBubble(){
         eventHappened=false;
         EventReceiver<Event> callback=(Event event)->eventHappened=true;
@@ -78,10 +97,9 @@ public class Tests {
         parent.subscribe(Event.class, callback);
         child.emit(new Event(), false);
         assert(!eventHappened);
-        parent.unsubscribe(Event.class, callback);
     }
 
-    // each Event has a stopBubbling method which allows the callback function to stop its propagation to the parent object
+    // metoda stopBubbling Event'u zatrzymuje jego wysłanie do obiektu rodzica
     static void stopBubbling(){
         eventHappened=false;
         EventReceiver<Event> stopBubbling=(Event event)->event.stopBubbling();
@@ -95,8 +113,6 @@ public class Tests {
         parent.subscribe(Event.class, callback);
         child.emit(new Event(), true);
         assert(!eventHappened);
-        parent.unsubscribe(Event.class, callback);
-        child.unsubscribe(Event.class, stopBubbling);
     }
 
     static void multipleCallbacks(){
@@ -113,12 +129,9 @@ public class Tests {
         target.emit(new Event(), false);
         assert(eventHappened);
         assert(secondEventHappened);
-        target.unsubscribe(Event.class, callback1);
-        target.unsubscribe(Event.class, callback2);
     }
 
-    // cancel method of Event should stop its bubbling 
-    // and stop the rest of callback functions assigned to this Event on this EventTarget from being called
+    // metoda cancel Event'u zatrzymuje wywoływanie pozostałych funkcji do niego przypisanych
     static void cancelling(){
         eventHappened=false;
         EventReceiver<Event> cancel=(Event event)->event.cancel();
@@ -133,13 +146,12 @@ public class Tests {
         parent.subscribe(Event.class, callback);
         child.emit(new Event(), true);
         assert(!eventHappened);
-        child.unsubscribe(Event.class, cancel);
-        child.unsubscribe(Event.class, callback);
-        parent.unsubscribe(Event.class, callback);
     }
 
     public static void main(String[] args){
         callingCallback();
+        unsubscribing();
+        unsubscribeException();
         differentReceiverType();
         passingData();
         bubbling();
@@ -147,6 +159,6 @@ public class Tests {
         stopBubbling();
         multipleCallbacks();
         cancelling();
-        System.out.println("All tests passed.");
+        System.out.println("Testy udane.");
     }
 }

@@ -34,10 +34,8 @@ public class EventTarget {
                 }
             }
         }
-        if(event.isBubbling()){
-            if(parent!=null){
-                parent.apply(event);
-            }
+        if(event.isBubbling() && parent!=null){
+            parent.apply(event);
         }
     }
     public final <T extends Event> void subscribe(Class<T> event, EventReceiver<T> callback){
@@ -49,13 +47,18 @@ public class EventTarget {
             listeners.put(event, callbackList);
         }
     }
-    public final <T extends Event> void unsubscribe(Class<T> event, EventReceiver<T> callback){
+    public class NoSuchEventListener extends RuntimeException {}
+    public final <T extends Event> void unsubscribe(Class<T> event, EventReceiver<T> callback) throws NoSuchEventListener {
         ArrayList<EventReceiver<?>> callbacksList=listeners.get(event);
         if(callbacksList!=null){
-            callbacksList.remove(callback);
+            if(!callbacksList.remove(callback)){
+                throw new NoSuchEventListener();
+            }
             if(callbacksList.size()==0){
                 listeners.remove(event);
             }
+        } else {
+            throw new NoSuchEventListener();
         }
     }
 }
